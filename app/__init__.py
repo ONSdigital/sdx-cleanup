@@ -25,7 +25,7 @@ class Config:
         self.RECEIPT_SUBSCRIPTION_ID = "dap-receipt-subscription"
         self.RECEIPT_SUBSCRIPTION_PATH = None
         self.RECEIPT_SUBSCRIBER = None
-        self.QUARANTINE_TOPIC_ID = "quarantine-seft-topic"
+        self.QUARANTINE_TOPIC_ID = "quarantine-dap-receipt-topic"
         self.QUARANTINE_TOPIC_PATH = None
         self.QUARANTINE_PUBLISHER = None
 

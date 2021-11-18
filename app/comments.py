@@ -19,7 +19,7 @@ def delete_stale_comments():
         query.keys_only()
         keys = [entity.key for entity in query.fetch()]
         CONFIG.DATASTORE_CLIENT.delete_multi(keys)
-        logger.info(f'successfully removed: {keys} from Datastore')
+        logger.info(f'successfully removed from Datastore', keys=keys)
 
 
 def fetch_comment_kinds() -> list:
