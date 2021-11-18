@@ -5,7 +5,7 @@ from concurrent.futures import TimeoutError
 from structlog.contextvars import bind_contextvars, clear_contextvars
 from app import CONFIG
 from app.cleanup import process
-from app.quarantine import quarantine_submission
+from app.quarantine import quarantine_receipt
 
 logger = structlog.get_logger()
 
@@ -18,17 +18,15 @@ def callback(message):
     Handles post processing events such acking the message and
     catching exceptions raised during processing.
     """
-    tx_id = message.attributes.get('tx_id')
     bind_contextvars(app="SDX-Cleanup")
-    bind_contextvars(tx_id=tx_id)
     bind_contextvars(thread=threading.currentThread().getName())
     try:
-        encrypted_message_str = message.data.decode('utf-8')
-        process(encrypted_message_str)
+        receipt_str = message.data.decode('utf-8')
+        process(receipt_str)
         message.ack()
     except Exception as e:
-        logger.error(f"Quarantining message: error {str(e)}")
-        quarantine_submission(message, tx_id, str(e))
+        logger.exception(f"Quarantining receipt: error {str(e)}")
+        quarantine_receipt(message, str(e))
         message.ack()
     finally:
         clear_contextvars()
@@ -36,7 +34,7 @@ def callback(message):
 
 def start():
     """
-    Begin listening to the seft pubsub subscription.
+    Begin listening to the dap receipt pubsub subscription.
 
     This functions spawns new threads that listen to the subscription topic and
     on receipt of a message invoke the callback function.
