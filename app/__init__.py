@@ -30,6 +30,7 @@ class Config:
         self.QUARANTINE_PUBLISHER = None
 
         self.DATASTORE_CLIENT = None
+        self.COMMENT_EXPIRY_IN_DAYS = 90
 
 
 CONFIG = Config(project_id)

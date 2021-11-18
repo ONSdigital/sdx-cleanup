@@ -1,83 +1,49 @@
 import json
 import structlog
+from google.cloud.exceptions import NotFound
+from google.cloud.storage import Bucket
+from structlog.contextvars import bind_contextvars
 
+from app import CONFIG
+from app.comments import delete_stale_comments
 
 logger = structlog.get_logger()
 
 
 def process(receipt_str: str):
-
-    logger.info(f"This Function was triggered by the PubSub message: {receipt_str}")
+    logger.info(f"Cleanup triggered by PubSub message: {receipt_str}")
 
     data_dict = json.loads(receipt_str)
 
     dataset = data_dict['dataset']
-    key = dataset.split('|', 1)[1]
+    file = dataset.split('|', 1)[1]
+    # file is of the form: survey/a148ac43-a937-401f-1234-b9bc5c123b5a
+    file_type, file_name = file.split('/', 1)
+    bind_contextvars(file_name=file_name, file_type=file_type)
+    logger.info('Extracted filename from message')
 
-    file_location = key.replace('|', '/')
-    bind_contextvars(file=file_location)
-    logger.info('Extracted file from message')
+    # all artefacts require removing from outputs bucket
+    remove_from_bucket(file, CONFIG.OUTPUT_BUCKET)
 
-    if 'comments' in file_location:
-        delete_old_comments()
+    # special actions depending on type
+    if file_type == "comments":
+        delete_stale_comments()
 
-    elif 'seft' in file_location:
-        file = file_location.split('/')[1].split(':')[0]
-        remove_from_bucket(file, SEFT_INPUT_BUCKET)
+    elif file_type == "seft":
+        remove_from_bucket(file_name, CONFIG.SEFT_INPUT_BUCKET)
 
     else:
-        file_name = file_location.split('/')[1]
-        # some response have .json suffix that needs to be removed
-        file = file_name.split('.')[0]
-        remove_from_bucket(file, SURVEY_INPUT_BUCKET)
+        # dap response have .json suffix that needs to be removed
+        f = file_name.split('.')[0]
+        remove_from_bucket(f, CONFIG.SURVEY_INPUT_BUCKET)
 
-    remove_from_bucket(file_location, OUTPUT_BUCKET)
-    logger.info('Cloud Function executed: SUCCESS')
+    logger.info('Cleanup ran successfully')
 
 
-def remove_from_bucket(folder_and_file: str, bucket_name: str):
-    bucket = storage_client.bucket(bucket_name)
-    blob = bucket.blob(folder_and_file)
-    blob.delete()
-    logger.info(f"Successfully deleted: {folder_and_file} from {bucket_name}.", file=folder_and_file)
-
-
-def delete_old_comments():
-    logger.info('Checking for old comments')
-    d = date.today()
-    ninety_days_ago = datetime(d.year, d.month, d.day) - timedelta(days=OLD_COMMENTS)
-    comment_kinds = fetch_comment_kinds()
-
-    for kind in comment_kinds:
-        query = datastore_client.query(kind=kind)
-        query.add_filter("created", "<", ninety_days_ago)
-        query.keys_only()
-        keys = [entity.key for entity in query.fetch()]
-        datastore_client.delete_multi(keys)
-        logger.info(f'successfully removed: {keys} from Datastore')
-
-
-def fetch_comment_kinds() -> list:
-    """
-        Fetch a list of all comment kinds from datastore.
-        Each kind is represented by {survey_id}_{period}
-    """
+def remove_from_bucket(file: str, bucket: Bucket):
     try:
-        query = datastore_client.query(kind="__kind__")
-        query.keys_only()
-        return [entity.key.id_or_name for entity in query.fetch() if not entity.key.id_or_name.startswith("_")]
-    except Exception as e:
-        logger.error(f'Datastore error fetching kinds: {e}')
-        raise e
-
-
-def publish_failure(event):
-    logger.info(f'Publishing gcs.key to {CLEANUP_FAILURE_TOPIC}')
-    publisher = pubsub_v1.PublisherClient()
-    cleanup_failure_topic_path = publisher.topic_path(PROJECT_ID, CLEANUP_FAILURE_TOPIC)
-
-    msg_data = base64.b64decode(event['data'])
-    future = publisher.publish(cleanup_failure_topic_path, msg_data)
-    while not future.done():
-        sleep(1)
-    logger.info('Published to failure queue')
+        blob = bucket.blob(file)
+        blob.delete()
+        logger.info(f"Successfully deleted: file from bucket", bucket=bucket.name)
+    except NotFound as nf:
+        logger.error("Unable to find file in bucket", bucket=bucket.name, error=nf)
