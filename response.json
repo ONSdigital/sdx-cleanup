@@ -1,12 +1,3 @@
-# sdx-cleanup
-
-The SDX-Cleanup service is used within the Office National of Statistics (ONS) for removing 
-any artefacts that remain after successful ingestion by NIFI - indicated by the posting 
-of a receipt on the dap-receipt-topic.
-
-# Receipt example
-
-```code
 {
   "files": [
     {
@@ -37,10 +28,3 @@ of a receipt on the dap-receipt-topic.
   "iterationL3": "",
   "schemaVersion": 1
 }
-```
-
-## License
-
-Copyright © 2016, Office for National Statistics (https://www.ons.gov.uk)
-
-Released under MIT license, see [LICENSE](LICENSE) for details.
