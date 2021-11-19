@@ -8,6 +8,10 @@ logger = structlog.get_logger()
 
 
 def delete_stale_comments():
+    """
+    Remove stale comments from datastore.
+    A stale comment is one that has existed for longer than CONFIG.COMMENT_EXPIRY_IN_DAYS
+    """
     logger.info('Searching for stale comments')
     d = date.today()
     removal_date = datetime(d.year, d.month, d.day) - timedelta(days=CONFIG.COMMENT_EXPIRY_IN_DAYS)
@@ -24,8 +28,8 @@ def delete_stale_comments():
 
 def fetch_comment_kinds() -> list:
     """
-        Fetch a list of all comment kinds from datastore.
-        Each kind is represented by {survey_id}_{period}
+    Fetch a list of all comment kinds from datastore.
+    Each kind is represented by {survey_id}_{period}
     """
     try:
         query = CONFIG.DATASTORE_CLIENT.query(kind="__kind__")

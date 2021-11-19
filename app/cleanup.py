@@ -11,6 +11,15 @@ logger = structlog.get_logger()
 
 
 def process(receipt_str: str):
+    """Perform the required cleanup based on the information within the receipt
+
+    For all submission types this involves removal from the output bucket.
+    Additionally survey and seft types also require removal from their respective input buckets
+    and comment types execute a job to remove stale comments from datastore
+
+    :param receipt_str: The receipt as a String
+    """
+
     logger.info(f"Cleanup triggered by PubSub message: {receipt_str}")
 
     data_dict = json.loads(receipt_str)
@@ -41,6 +50,11 @@ def process(receipt_str: str):
 
 
 def remove_from_bucket(file: str, bucket: Bucket):
+    """Remove a file from a bucket
+
+    :param file: The filename and path e.g. survey/a148ac43-a937-401f-1234-b9bc5c123b5a
+    :param bucket: A reference to a Bucket object
+    """
     try:
         blob = bucket.blob(file)
         blob.delete()

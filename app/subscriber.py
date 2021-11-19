@@ -1,8 +1,10 @@
-import structlog
 import threading
 from concurrent.futures import TimeoutError
 
+import structlog
+from google.cloud.pubsub_v1.subscriber.message import Message
 from structlog.contextvars import bind_contextvars, clear_contextvars
+
 from app import CONFIG
 from app.cleanup import process
 from app.quarantine import quarantine_receipt
@@ -10,13 +12,15 @@ from app.quarantine import quarantine_receipt
 logger = structlog.get_logger()
 
 
-def callback(message):
+def callback(message: Message):
     """
     Manages the life cycle of the received message.
     Handles pre processing events such as setting up logging bindings.
     Extracts the data and passes it on to be processed.
     Handles post processing events such acking the message and
     catching exceptions raised during processing.
+
+    :param message: The message object provided google pubsub
     """
     bind_contextvars(app="SDX-Cleanup")
     bind_contextvars(thread=threading.currentThread().getName())
