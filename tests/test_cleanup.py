@@ -1,8 +1,11 @@
 import json
 import unittest
-from unittest.mock import patch, call
+from unittest.mock import patch, call, Mock
+
+from google.api_core.exceptions import NotFound
 
 from app import cleanup
+from app.cleanup import remove_from_bucket
 
 
 class TestCleanup(unittest.TestCase):
@@ -96,3 +99,20 @@ class TestCleanup(unittest.TestCase):
         cleanup.process(receipt)
         remove_from_bucket.assert_called_with("comments/2021-11-18.zip", mock_config.OUTPUT_BUCKET)
         mock_delete_comments.assert_called()
+
+    def test_remove_from_bucket(self):
+        mock_blob = Mock()
+        mock_bucket = Mock()
+        mock_bucket.blob.return_value = mock_blob
+        filename = "9010576d-f3df-4011-aa42-adecd9bee011"
+        remove_from_bucket(filename, mock_bucket)
+        mock_bucket.blob.assert_called_with(filename)
+        mock_blob.delete.assert_called()
+
+    @patch.object(cleanup, 'logger')
+    def test_not_found_in_bucket(self, mock_logger):
+        mock_bucket = Mock()
+        mock_bucket.blob.side_effect = NotFound("Not found")
+        filename = "9010576d-f3df-4011-aa42-adecd9bee011"
+        remove_from_bucket(filename, mock_bucket)
+        mock_logger.error.assert_called()
