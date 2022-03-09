@@ -41,6 +41,10 @@ def process(receipt_str: str):
     elif file_type == "seft":
         remove_from_bucket(file_name, CONFIG.SEFT_INPUT_BUCKET)
 
+    elif file_type == "feedback":
+        feedback_filename = file_name.split('-fb-')[0]
+        remove_from_bucket(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET)
+
     else:
         # dap response have .json suffix that needs to be removed
         f = file_name.split('.')[0]
