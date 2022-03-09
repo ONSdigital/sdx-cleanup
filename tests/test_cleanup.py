@@ -91,6 +91,28 @@ class TestCleanup(unittest.TestCase):
 
     @patch.object(cleanup, 'remove_from_bucket')
     @patch.object(cleanup, 'CONFIG')
+    def test_feedback_receipt(self, mock_config, remove_from_bucket):
+        receipt_dict = json.loads(self.receipt)
+        receipt_dict['dataset'] = "093|feedback/d41a586c-bea2-47c8-b782-f9bdb322b089-fb-1645465208"
+        receipt = json.dumps(receipt_dict)
+        cleanup.process(receipt)
+        calls = [
+            call(
+                "feedback/d41a586c-bea2-47c8-b782-f9bdb322b089-fb-1645465208",
+                mock_config.OUTPUT_BUCKET),
+            call(
+                "d41a586c-bea2-47c8-b782-f9bdb322b089",
+                mock_config.SURVEY_INPUT_BUCKET)
+        ]
+        remove_from_bucket.assert_has_calls(calls, any_order=True)
+
+
+
+
+
+
+    @patch.object(cleanup, 'remove_from_bucket')
+    @patch.object(cleanup, 'CONFIG')
     @patch.object(cleanup, 'delete_stale_comments')
     def test_comments_receipt(self, mock_delete_comments, mock_config, remove_from_bucket):
         receipt_dict = json.loads(self.receipt)
