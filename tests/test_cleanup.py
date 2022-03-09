@@ -106,11 +106,6 @@ class TestCleanup(unittest.TestCase):
         ]
         remove_from_bucket.assert_has_calls(calls, any_order=True)
 
-
-
-
-
-
     @patch.object(cleanup, 'remove_from_bucket')
     @patch.object(cleanup, 'CONFIG')
     @patch.object(cleanup, 'delete_stale_comments')
