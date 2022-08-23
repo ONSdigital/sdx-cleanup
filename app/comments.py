@@ -1,3 +1,4 @@
+import logging
 from datetime import date, datetime, timedelta
 
 import structlog
@@ -5,6 +6,8 @@ import structlog
 from app import CONFIG
 
 logger = structlog.get_logger()
+
+MAX_ENTITIES = 500
 
 
 def delete_stale_comments():
@@ -18,12 +21,18 @@ def delete_stale_comments():
     comment_kinds = fetch_comment_kinds()
 
     for kind in comment_kinds:
-        query = CONFIG.DATASTORE_CLIENT.query(kind=kind)
-        query.add_filter("created", "<", removal_date)
-        query.keys_only()
-        keys = [entity.key for entity in query.fetch()]
-        CONFIG.DATASTORE_CLIENT.delete_multi(keys)
-        logger.info(f'successfully removed from Datastore', keys=keys)
+
+        try:
+            query = CONFIG.DATASTORE_CLIENT.query(kind=kind)
+            query.add_filter("created", "<", removal_date)
+            query.keys_only()
+            keys = [entity.key for entity in query.fetch(limit=MAX_ENTITIES)]
+            CONFIG.DATASTORE_CLIENT.delete_multi(keys)
+            logger.info(f'successfully removed from Datastore', keys=keys)
+
+        except Exception as e:
+            logger.error(f"failed to delete for kind {kind}")
+            logging.error(str(e))
 
 
 def fetch_comment_kinds() -> list:
