@@ -99,7 +99,10 @@ class TestCleanup(unittest.TestCase):
         calls = [
             call(
                 "feedback/d41a586c-bea2-47c8-b782-f9bdb322b089-fb-1645465208",
-                mock_config.OUTPUT_BUCKET)
+                mock_config.OUTPUT_BUCKET),
+            call(
+                "d41a586c-bea2-47c8-b782-f9bdb322b089",
+                mock_config.SURVEY_INPUT_BUCKET)
         ]
         remove_from_bucket.assert_has_calls(calls, any_order=True)
 
