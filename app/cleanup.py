@@ -42,8 +42,12 @@ def process(receipt_str: str):
         remove_from_bucket(file_name, CONFIG.SEFT_INPUT_BUCKET)
 
     elif file_type == "feedback":
-        feedback_filename = file_name.split('-fb-')[0]
-        remove_from_bucket(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET)
+        '''feedback responses in input bucket have a different name causing cleanup to error
+        therefore temporarily commented out the attempt to clean them up'''
+
+        # feedback_filename = file_name.split('-fb-')[0]
+        # remove_from_bucket(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET)
+        pass
 
     else:
         # dap response have .json suffix that needs to be removed
