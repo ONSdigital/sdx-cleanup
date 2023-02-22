@@ -133,3 +133,28 @@ class TestCleanup(unittest.TestCase):
         filename = "9010576d-f3df-4011-aa42-adecd9bee011"
         remove_from_bucket(filename, mock_bucket)
         mock_logger.error.assert_called()
+
+    @patch.object(cleanup, 'remove_from_bucket')
+    @patch.object(cleanup, 'CONFIG')
+    def test_find_seft_with_file_type_and_name(self, mock_config, remove_from_bucket):
+        seft_receipt_dict = json.loads(self.receipt)
+        seft_receipt_dict["dataset"] = "093|"
+        seft_receipt_dict["files"][0]["name"] = "49912345678S_202109_093_20211118060139.xlsx.gpg"
+        seft_receipt_dict["description"] = "093 seft response for period 202212 sample unit 48806979667T"
+        seft_receipt_dump = json.dumps(seft_receipt_dict)
+
+        cleanup.process(seft_receipt_dump)
+
+        calls = [
+            call(
+                "seft/49912345678S_202109_093_20211118060139.xlsx.gpg",
+                mock_config.OUTPUT_BUCKET),
+            call(
+                "49912345678S_202109_093_20211118060139.xlsx.gpg",
+                mock_config.SEFT_INPUT_BUCKET)
+        ]
+        remove_from_bucket.assert_has_calls(calls, any_order=True)
+
+
+
+

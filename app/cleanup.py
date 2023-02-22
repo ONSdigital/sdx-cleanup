@@ -29,14 +29,18 @@ def process(receipt_str: str):
 
         # file is of the form: survey/a148ac43-a937-401f-1234-b9bc5c123b5a
         if '/' not in file:
-            logger.info("Invalid file format, doesn't contain '/'")
-            return
+            # Pulling information out of the message json
+            file_name = data_dict["files"][0]["name"]
+            file_type = data_dict['description'].split(' ')[1]
+            file = f"{file_type}/{file_name}"
+            logger.info(f"Found file type is {file_type}, found file name is {file_name}.")
+        else:
+            file_type, file_name = file.split('/', 1)
 
-        file_type, file_name = file.split('/', 1)
         bind_contextvars(file_name=file_name, file_type=file_type)
         logger.info('Extracted filename from message')
 
-        # all artefacts require removing from outputs bucket
+        # all artifacts require removing from outputs bucket
         remove_from_bucket(file, CONFIG.OUTPUT_BUCKET)
 
         # special actions depending on type
