@@ -33,27 +33,27 @@ def process(receipt_str: str):
             return
 
         file_type, file_name = file.split('/', 1)
-        # bind_contextvars(file_name=file_name, file_type=file_type)
-        # logger.info('Extracted filename from message')
-        #
-        # # all artefacts require removing from outputs bucket
-        # remove_from_bucket(file, CONFIG.OUTPUT_BUCKET)
-        #
-        # # special actions depending on type
-        # if file_type == "comments":
-        #     delete_stale_comments()
-        #
-        # elif file_type == "seft":
-        #     remove_from_bucket(file_name, CONFIG.SEFT_INPUT_BUCKET)
-        #
-        # elif file_type == "feedback":
-        #     feedback_filename = file_name.split('-fb-')[0]
-        #     remove_from_bucket(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET)
-        #
-        # else:
-        #     # dap response have .json suffix that needs to be removed
-        #     f = file_name.split('.')[0]
-        #     remove_from_bucket(f, CONFIG.SURVEY_INPUT_BUCKET)
+        bind_contextvars(file_name=file_name, file_type=file_type)
+        logger.info('Extracted filename from message')
+
+        # all artefacts require removing from outputs bucket
+        remove_from_bucket(file, CONFIG.OUTPUT_BUCKET)
+
+        # special actions depending on type
+        if file_type == "comments":
+            delete_stale_comments()
+
+        elif file_type == "seft":
+            remove_from_bucket(file_name, CONFIG.SEFT_INPUT_BUCKET)
+
+        elif file_type == "feedback":
+            feedback_filename = file_name.split('-fb-')[0]
+            remove_from_bucket(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET)
+
+        else:
+            # dap response have .json suffix that needs to be removed
+            f = file_name.split('.')[0]
+            remove_from_bucket(f, CONFIG.SURVEY_INPUT_BUCKET)
 
         logger.info('Cleanup ran successfully')
 
