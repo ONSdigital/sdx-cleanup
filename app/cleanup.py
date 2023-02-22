@@ -58,7 +58,7 @@ def process(receipt_str: str):
         logger.info('Cleanup ran successfully')
 
     except Exception as e:
-        logger.err(e)
+        logger.info(e)
 
 
 def remove_from_bucket(file: str, bucket: Bucket):
