@@ -22,35 +22,47 @@ def process(receipt_str: str):
 
     logger.info(f"Cleanup triggered by PubSub message: {receipt_str}")
 
-    data_dict = json.loads(receipt_str)
+    try:
+        data_dict = json.loads(receipt_str)
+        dataset = data_dict['dataset']
+        file = dataset.split('|', 1)[1]
 
-    dataset = data_dict['dataset']
-    file = dataset.split('|', 1)[1]
-    # file is of the form: survey/a148ac43-a937-401f-1234-b9bc5c123b5a
-    file_type, file_name = file.split('/', 1)
-    bind_contextvars(file_name=file_name, file_type=file_type)
-    logger.info('Extracted filename from message')
+        # file is of the form: survey/a148ac43-a937-401f-1234-b9bc5c123b5a
+        if '/' not in file:
+            # Pulling information out of the message json
+            file_name = data_dict["files"][0]["name"]
+            file_type = data_dict['description'].split(' ')[1]
+            file = f"{file_type}/{file_name}"
+            logger.info(f"Found file type is {file_type}, found file name is {file_name}.")
+        else:
+            file_type, file_name = file.split('/', 1)
 
-    # all artefacts require removing from outputs bucket
-    remove_from_bucket(file, CONFIG.OUTPUT_BUCKET)
+        bind_contextvars(file_name=file_name, file_type=file_type)
+        logger.info('Extracted filename from message')
 
-    # special actions depending on type
-    if file_type == "comments":
-        delete_stale_comments()
+        # all artifacts require removing from outputs bucket
+        remove_from_bucket(file, CONFIG.OUTPUT_BUCKET)
 
-    elif file_type == "seft":
-        remove_from_bucket(file_name, CONFIG.SEFT_INPUT_BUCKET)
+        # special actions depending on type
+        if file_type == "comments":
+            delete_stale_comments()
 
-    elif file_type == "feedback":
-        feedback_filename = file_name.split('-fb-')[0]
-        remove_from_bucket(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET)
+        elif file_type == "seft":
+            remove_from_bucket(file_name, CONFIG.SEFT_INPUT_BUCKET)
 
-    else:
-        # dap response have .json suffix that needs to be removed
-        f = file_name.split('.')[0]
-        remove_from_bucket(f, CONFIG.SURVEY_INPUT_BUCKET)
+        elif file_type == "feedback":
+            feedback_filename = file_name.split('-fb-')[0]
+            remove_from_bucket(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET)
 
-    logger.info('Cleanup ran successfully')
+        else:
+            # dap response have .json suffix that needs to be removed
+            f = file_name.split('.')[0]
+            remove_from_bucket(f, CONFIG.SURVEY_INPUT_BUCKET)
+
+        logger.info('Cleanup ran successfully')
+
+    except Exception as e:
+        logger.info(e)
 
 
 def remove_from_bucket(file: str, bucket: Bucket):
