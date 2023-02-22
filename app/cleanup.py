@@ -24,33 +24,40 @@ def process(receipt_str: str):
 
     data_dict = json.loads(receipt_str)
 
-    dataset = data_dict['dataset']
-    file = dataset.split('|', 1)[1]
-    # file is of the form: survey/a148ac43-a937-401f-1234-b9bc5c123b5a
-    file_type, file_name = file.split('/', 1)
-    bind_contextvars(file_name=file_name, file_type=file_type)
-    logger.info('Extracted filename from message')
+    try:
+        dataset = data_dict['dataset']
+        file = dataset.split('|', 1)[1]
 
-    # all artefacts require removing from outputs bucket
-    remove_from_bucket(file, CONFIG.OUTPUT_BUCKET)
+        # file is of the form: survey/a148ac43-a937-401f-1234-b9bc5c123b5a
+        file_type, file_name = file.split('/', 1)
+        bind_contextvars(file_name=file_name, file_type=file_type)
+        logger.info('Extracted filename from message')
 
-    # special actions depending on type
-    if file_type == "comments":
-        delete_stale_comments()
+        # all artefacts require removing from outputs bucket
+        remove_from_bucket(file, CONFIG.OUTPUT_BUCKET)
 
-    elif file_type == "seft":
-        remove_from_bucket(file_name, CONFIG.SEFT_INPUT_BUCKET)
+        # special actions depending on type
+        if file_type == "comments":
+            delete_stale_comments()
 
-    elif file_type == "feedback":
-        feedback_filename = file_name.split('-fb-')[0]
-        remove_from_bucket(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET)
+        elif file_type == "seft":
+            remove_from_bucket(file_name, CONFIG.SEFT_INPUT_BUCKET)
 
-    else:
-        # dap response have .json suffix that needs to be removed
-        f = file_name.split('.')[0]
-        remove_from_bucket(f, CONFIG.SURVEY_INPUT_BUCKET)
+        elif file_type == "feedback":
+            feedback_filename = file_name.split('-fb-')[0]
+            remove_from_bucket(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET)
 
-    logger.info('Cleanup ran successfully')
+        else:
+            # dap response have .json suffix that needs to be removed
+            f = file_name.split('.')[0]
+            remove_from_bucket(f, CONFIG.SURVEY_INPUT_BUCKET)
+
+        logger.info('Cleanup ran successfully')
+
+    except ValueError as e:
+        logger.err('Cleanup ran unsuccessfully')
+        if not file.contains("/"):
+            logger.err('Invalid file type or file name')
 
 
 def remove_from_bucket(file: str, bucket: Bucket):
