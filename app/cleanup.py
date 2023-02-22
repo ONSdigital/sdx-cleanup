@@ -28,7 +28,7 @@ def process(receipt_str: str):
         file = dataset.split('|', 1)[1]
 
         # file is of the form: survey/a148ac43-a937-401f-1234-b9bc5c123b5a
-        if not file.contains('/'):
+        if '/' not in file:
             logger.info("Invalid file format, doesn't contain '/'")
             return
 
