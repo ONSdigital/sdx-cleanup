@@ -3,6 +3,7 @@ import structlog
 from app.logger import logging_config
 from google.cloud import pubsub_v1, storage
 from google.cloud import datastore
+from flask import Flask
 
 logging_config()
 logger = structlog.get_logger()
@@ -61,3 +62,6 @@ def cloud_config():
     CONFIG.QUARANTINE_PUBLISHER = quarantine_publisher
 
     CONFIG.DATASTORE_CLIENT = datastore.Client(project=project_id)
+
+
+app = Flask(__name__)

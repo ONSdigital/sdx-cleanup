@@ -4,10 +4,12 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-google-cloud-pubsub = "==2.4.1"
+google-cloud-pubsub = "*"
 google-cloud-storage = "==1.37.1"
 google-cloud-datastore = "==2.1.1"
 structlog = "==20.1.0"
+waitress = "*"
+flask = "*"
 
 [dev-packages]
 pytest = "==6.2.3"
