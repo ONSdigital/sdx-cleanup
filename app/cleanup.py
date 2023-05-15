@@ -16,8 +16,6 @@ def process(message: Message):
     Additionally, survey and seft types also require removal from their respective input buckets
     and comment types execute a job to remove stale comments from datastore
     """
-
-    logger.info(json.dumps(message))
     receipt_str = message.get("data")
     logger.info(f"Cleanup triggered by PubSub message: {receipt_str}")
 
