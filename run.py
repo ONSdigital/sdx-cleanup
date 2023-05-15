@@ -1,10 +1,7 @@
-from app import subscriber, cloud_config
-import structlog
-
-logger = structlog.get_logger()
+from app import sdx_app, CONFIG
+from app.cleanup import process
 
 
 if __name__ == '__main__':
-    logger.info('Starting SDX Cleanup')
-    cloud_config()
-    subscriber.start()
+    sdx_app.add_pubsub_endpoint(process, CONFIG.QUARANTINE_TOPIC_ID)
+    sdx_app.run(port=5000)
