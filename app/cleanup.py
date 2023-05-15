@@ -1,6 +1,6 @@
 import json
 
-from sdx_gcp import Message, Request, Envelope
+from sdx_gcp import Message, Request, get_message, get_data
 from sdx_gcp.app import get_logger
 
 from app import CONFIG, sdx_app
@@ -16,10 +16,10 @@ def process(message: Message):
     Additionally, survey and seft types also require removal from their respective input buckets
     and comment types execute a job to remove stale comments from datastore
     """
-    receipt_str = message.get("data")
-    logger.info(f"Cleanup triggered by PubSub message: {receipt_str}")
+    data: str = get_data(message)
+    logger.info(f"Cleanup triggered by PubSub message with data: {data}")
 
-    file, file_name, file_type = extract_file_filename_and_type(receipt_str)
+    file, file_name, file_type = extract_file_filename_and_type(data)
 
     logger.info('Extracted filename from message')
 
@@ -65,8 +65,7 @@ def extract_file_filename_and_type(receipt_str: str) -> tuple[str, str, str]:
 
 def get_tx_id(req: Request) -> str:
     logger.info(f"Extracting tx_id from {req}")
-    envelope: Envelope = req.get_json()
-    logger.info(f"envelope: {envelope}")
-    receipt_str = envelope["message"]["data"]
-    filename = extract_file_filename_and_type(receipt_str)[1]
+    message: Message = get_message(req)
+    data: str = get_data(message)
+    filename = extract_file_filename_and_type(data)[1]
     return filename
