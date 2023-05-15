@@ -1,3 +1,4 @@
+import base64
 import json
 import unittest
 from unittest.mock import patch, call
@@ -5,6 +6,10 @@ from unittest.mock import patch, call
 from sdx_gcp import Message
 
 from app import cleanup
+
+
+def convert_data(data: str) -> str:
+    return base64.b64encode(data.encode()).decode("utf-8").strip()
 
 
 class TestCleanup(unittest.TestCase):
@@ -51,15 +56,15 @@ class TestCleanup(unittest.TestCase):
     @patch('app.cleanup.CONFIG')
     def test_survey_receipt(self, mock_config, mock_app):
         m = self.message
-        m["data"] = self.receipt
+        m["data"] = convert_data(self.receipt)
         cleanup.process(m)
         calls = [
             call(
                 "survey/a148ac43-a937-401f-1234-b9bc5c123b5a",
-                mock_config.OUTPUT_BUCKET),
+                mock_config.OUTPUT_BUCKET_NAME),
             call(
                 "a148ac43-a937-401f-1234-b9bc5c123b5a",
-                mock_config.SURVEY_INPUT_BUCKET)
+                mock_config.SURVEY_INPUT_BUCKET_NAME)
         ]
         mock_app.gcs_delete.assert_has_calls(calls, any_order=True)
 
@@ -70,15 +75,15 @@ class TestCleanup(unittest.TestCase):
         receipt_dict['dataset'] = "283|dap/206d0f2f-2d0a-1234-87a6-86c1fdf2384f.json"
         receipt = json.dumps(receipt_dict)
         m = self.message
-        m["data"] = receipt
+        m["data"] = convert_data(receipt)
         cleanup.process(m)
         calls = [
             call(
                 "dap/206d0f2f-2d0a-1234-87a6-86c1fdf2384f.json",
-                mock_config.OUTPUT_BUCKET),
+                mock_config.OUTPUT_BUCKET_NAME),
             call(
                 "206d0f2f-2d0a-1234-87a6-86c1fdf2384f",
-                mock_config.SURVEY_INPUT_BUCKET)
+                mock_config.SURVEY_INPUT_BUCKET_NAME)
         ]
         mock_app.gcs_delete.assert_has_calls(calls, any_order=True)
 
@@ -89,15 +94,15 @@ class TestCleanup(unittest.TestCase):
         receipt_dict['dataset'] = "093|seft/49912345678S_202109_093_20211118060139.xlsx.gpg"
         receipt = json.dumps(receipt_dict)
         m = self.message
-        m["data"] = receipt
+        m["data"] = convert_data(receipt)
         cleanup.process(m)
         calls = [
             call(
                 "seft/49912345678S_202109_093_20211118060139.xlsx.gpg",
-                mock_config.OUTPUT_BUCKET),
+                mock_config.OUTPUT_BUCKET_NAME),
             call(
                 "49912345678S_202109_093_20211118060139.xlsx.gpg",
-                mock_config.SEFT_INPUT_BUCKET)
+                mock_config.SEFT_INPUT_BUCKET_NAME)
         ]
         mock_app.gcs_delete.assert_has_calls(calls, any_order=True)
 
@@ -108,15 +113,15 @@ class TestCleanup(unittest.TestCase):
         receipt_dict['dataset'] = "093|feedback/d41a586c-bea2-47c8-b782-f9bdb322b089-fb-1645465208"
         receipt = json.dumps(receipt_dict)
         m = self.message
-        m["data"] = receipt
+        m["data"] = convert_data(receipt)
         cleanup.process(m)
         calls = [
             call(
                 "feedback/d41a586c-bea2-47c8-b782-f9bdb322b089-fb-1645465208",
-                mock_config.OUTPUT_BUCKET),
+                mock_config.OUTPUT_BUCKET_NAME),
             call(
                 "d41a586c-bea2-47c8-b782-f9bdb322b089",
-                mock_config.SURVEY_INPUT_BUCKET)
+                mock_config.SURVEY_INPUT_BUCKET_NAME)
         ]
         mock_app.gcs_delete.assert_has_calls(calls, any_order=True)
 
@@ -128,9 +133,9 @@ class TestCleanup(unittest.TestCase):
         receipt_dict['dataset'] = "sdx_comments|comments/2021-11-18.zip"
         receipt = json.dumps(receipt_dict)
         m = self.message
-        m["data"] = receipt
+        m["data"] = convert_data(receipt)
         cleanup.process(m)
-        mock_app.gcs_delete.assert_called_with("comments/2021-11-18.zip", mock_config.OUTPUT_BUCKET)
+        mock_app.gcs_delete.assert_called_with("comments/2021-11-18.zip", mock_config.OUTPUT_BUCKET_NAME)
         mock_delete_comments.assert_called()
 
     @patch('app.cleanup.sdx_app')
@@ -142,19 +147,15 @@ class TestCleanup(unittest.TestCase):
         seft_receipt_dict["description"] = "093 seft response for period 202212 sample unit 48806979667T"
         seft_receipt_dump = json.dumps(seft_receipt_dict)
         m = self.message
-        m["data"] = seft_receipt_dump
+        m["data"] = convert_data(seft_receipt_dump)
         cleanup.process(m)
 
         calls = [
             call(
                 "seft/49912345678S_202109_093_20211118060139.xlsx.gpg",
-                mock_config.OUTPUT_BUCKET),
+                mock_config.OUTPUT_BUCKET_NAME),
             call(
                 "49912345678S_202109_093_20211118060139.xlsx.gpg",
-                mock_config.SEFT_INPUT_BUCKET)
+                mock_config.SEFT_INPUT_BUCKET_NAME)
         ]
         mock_app.gcs_delete.assert_has_calls(calls, any_order=True)
-
-
-
-

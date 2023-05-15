@@ -24,23 +24,23 @@ def process(message: Message):
     logger.info('Extracted filename from message')
 
     # all artifacts require removing from outputs bucket
-    sdx_app.gcs_delete(file, CONFIG.OUTPUT_BUCKET)
+    sdx_app.gcs_delete(file, CONFIG.OUTPUT_BUCKET_NAME)
 
     # special actions depending on type
     if file_type == "comments":
         delete_stale_comments()
 
     elif file_type == "seft":
-        sdx_app.gcs_delete(file_name, CONFIG.SEFT_INPUT_BUCKET)
+        sdx_app.gcs_delete(file_name, CONFIG.SEFT_INPUT_BUCKET_NAME)
 
     elif file_type == "feedback":
         feedback_filename = file_name.split('-fb-')[0]
-        sdx_app.gcs_delete(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET)
+        sdx_app.gcs_delete(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET_NAME)
 
     else:
         # dap response have .json suffix that needs to be removed
         f = file_name.split('.')[0]
-        sdx_app.gcs_delete(f, CONFIG.SURVEY_INPUT_BUCKET)
+        sdx_app.gcs_delete(f, CONFIG.SURVEY_INPUT_BUCKET_NAME)
 
     logger.info('Cleanup ran successfully')
 
