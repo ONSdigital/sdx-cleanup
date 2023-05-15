@@ -64,7 +64,9 @@ def extract_file_filename_and_type(receipt_str: str) -> tuple[str, str, str]:
 
 
 def get_tx_id(req: Request) -> str:
+    logger.info(f"Extracting tx_id from {req}")
     envelope: Envelope = req.get_json()
+    logger.info(f"envelope: {envelope}")
     receipt_str = envelope["message"]["data"]
     filename = extract_file_filename_and_type(receipt_str)[1]
     return filename
