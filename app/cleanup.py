@@ -1,79 +1,71 @@
 import json
-import structlog
-from google.cloud.exceptions import NotFound
-from google.cloud.storage import Bucket
-from structlog.contextvars import bind_contextvars
 
-from app import CONFIG
+from sdx_gcp import Message, Request, get_message, get_data
+from sdx_gcp.app import get_logger
+
+from app import CONFIG, sdx_app
 from app.comments import delete_stale_comments
 
-logger = structlog.get_logger()
+logger = get_logger()
 
 
-def process(receipt_str: str):
+def process(message: Message):
     """Perform the required cleanup based on the information within the receipt
 
     For all submission types this involves removal from the output bucket.
-    Additionally survey and seft types also require removal from their respective input buckets
+    Additionally, survey and seft types also require removal from their respective input buckets
     and comment types execute a job to remove stale comments from datastore
-
-    :param receipt_str: The receipt as a String
     """
+    data: str = get_data(message)
+    logger.info(f"Cleanup triggered by PubSub message with data: {data}")
 
-    logger.info(f"Cleanup triggered by PubSub message: {receipt_str}")
+    file, file_name, file_type = extract_file_filename_and_type(data)
 
-    try:
-        data_dict = json.loads(receipt_str)
-        dataset = data_dict['dataset']
-        file = dataset.split('|', 1)[1]
+    logger.info('Extracted filename from message')
 
-        # file is of the form: survey/a148ac43-a937-401f-1234-b9bc5c123b5a
-        if '/' not in file:
-            # Pulling information out of the message json
-            file_name = data_dict["files"][0]["name"]
-            file_type = data_dict['description'].split(' ')[1]
-            file = f"{file_type}/{file_name}"
-            logger.info(f"Found file type is {file_type}, found file name is {file_name}.")
-        else:
-            file_type, file_name = file.split('/', 1)
+    # all artifacts require removing from outputs bucket
+    sdx_app.gcs_delete(file, CONFIG.OUTPUT_BUCKET_NAME)
 
-        bind_contextvars(file_name=file_name, file_type=file_type)
-        logger.info('Extracted filename from message')
+    # special actions depending on type
+    if file_type == "comments":
+        delete_stale_comments()
 
-        # all artifacts require removing from outputs bucket
-        remove_from_bucket(file, CONFIG.OUTPUT_BUCKET)
+    elif file_type == "seft":
+        sdx_app.gcs_delete(file_name, CONFIG.SEFT_INPUT_BUCKET_NAME)
 
-        # special actions depending on type
-        if file_type == "comments":
-            delete_stale_comments()
+    elif file_type == "feedback":
+        feedback_filename = file_name.split('-fb-')[0]
+        sdx_app.gcs_delete(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET_NAME)
 
-        elif file_type == "seft":
-            remove_from_bucket(file_name, CONFIG.SEFT_INPUT_BUCKET)
+    else:
+        # dap response have .json suffix that needs to be removed
+        f = file_name.split('.')[0]
+        sdx_app.gcs_delete(f, CONFIG.SURVEY_INPUT_BUCKET_NAME)
 
-        elif file_type == "feedback":
-            feedback_filename = file_name.split('-fb-')[0]
-            remove_from_bucket(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET)
-
-        else:
-            # dap response have .json suffix that needs to be removed
-            f = file_name.split('.')[0]
-            remove_from_bucket(f, CONFIG.SURVEY_INPUT_BUCKET)
-
-        logger.info('Cleanup ran successfully')
-
-    except Exception as e:
-        logger.info(e)
+    logger.info('Cleanup ran successfully')
 
 
-def remove_from_bucket(file: str, bucket: Bucket):
-    """Remove a file from a bucket
+def extract_file_filename_and_type(receipt_str: str) -> tuple[str, str, str]:
+    data_dict = json.loads(receipt_str)
+    dataset = data_dict['dataset']
+    file = dataset.split('|', 1)[1]
 
-    :param file: The filename and path e.g. survey/a148ac43-a937-401f-1234-b9bc5c123b5a
-    :param bucket: A reference to a Bucket object
-    """
-    try:
-        blob = bucket.blob(file)
-        blob.delete()
-        logger.info(f"Successfully deleted: file from bucket", bucket=bucket.name)
-    except NotFound as nf:
-        logger.error("Unable to find file in bucket", bucket=bucket.name, error=nf)
+    # file is of the form: survey/a148ac43-a937-401f-1234-b9bc5c123b5a
+    if '/' not in file:
+        # Pulling information out of the message json
+        file_name = data_dict["files"][0]["name"]
+        file_type = data_dict['description'].split(' ')[1]
+        file = f"{file_type}/{file_name}"
+        logger.info(f"Found file type is {file_type}, found file name is {file_name}.")
+    else:
+        file_type, file_name = file.split('/', 1)
+
+    return file, file_name, file_type
+
+
+def get_tx_id(req: Request) -> str:
+    logger.info(f"Extracting tx_id from {req}")
+    message: Message = get_message(req)
+    data: str = get_data(message)
+    filename = extract_file_filename_and_type(data)[1]
+    return filename
