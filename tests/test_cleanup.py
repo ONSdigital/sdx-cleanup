@@ -7,6 +7,8 @@ from sdx_gcp import Message
 
 from app import cleanup
 
+FAKE_TX_ID = '123'
+
 
 def convert_data(data: str) -> str:
     return base64.b64encode(data.encode()).decode("utf-8").strip()
@@ -57,7 +59,7 @@ class TestCleanup(unittest.TestCase):
     def test_survey_receipt(self, mock_config, mock_app):
         m = self.message
         m["data"] = convert_data(self.receipt)
-        cleanup.process(m)
+        cleanup.process(m, FAKE_TX_ID)
         calls = [
             call(
                 "survey/a148ac43-a937-401f-1234-b9bc5c123b5a",
@@ -76,7 +78,7 @@ class TestCleanup(unittest.TestCase):
         receipt = json.dumps(receipt_dict)
         m = self.message
         m["data"] = convert_data(receipt)
-        cleanup.process(m)
+        cleanup.process(m, FAKE_TX_ID)
         calls = [
             call(
                 "dap/206d0f2f-2d0a-1234-87a6-86c1fdf2384f.json",
@@ -95,7 +97,7 @@ class TestCleanup(unittest.TestCase):
         receipt = json.dumps(receipt_dict)
         m = self.message
         m["data"] = convert_data(receipt)
-        cleanup.process(m)
+        cleanup.process(m, FAKE_TX_ID)
         calls = [
             call(
                 "seft/49912345678S_202109_093_20211118060139.xlsx.gpg",
@@ -114,7 +116,7 @@ class TestCleanup(unittest.TestCase):
         receipt = json.dumps(receipt_dict)
         m = self.message
         m["data"] = convert_data(receipt)
-        cleanup.process(m)
+        cleanup.process(m, FAKE_TX_ID)
         calls = [
             call(
                 "feedback/d41a586c-bea2-47c8-b782-f9bdb322b089-fb-1645465208",
@@ -134,7 +136,7 @@ class TestCleanup(unittest.TestCase):
         receipt = json.dumps(receipt_dict)
         m = self.message
         m["data"] = convert_data(receipt)
-        cleanup.process(m)
+        cleanup.process(m, FAKE_TX_ID)
         mock_app.gcs_delete.assert_called_with("comments/2021-11-18.zip", mock_config.OUTPUT_BUCKET_NAME)
         mock_delete_comments.assert_called()
 
@@ -148,7 +150,7 @@ class TestCleanup(unittest.TestCase):
         seft_receipt_dump = json.dumps(seft_receipt_dict)
         m = self.message
         m["data"] = convert_data(seft_receipt_dump)
-        cleanup.process(m)
+        cleanup.process(m, FAKE_TX_ID)
 
         calls = [
             call(
