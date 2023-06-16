@@ -1,6 +1,6 @@
 import json
 
-from sdx_gcp import Message, Request, get_message, get_data
+from sdx_gcp import Message, Request, get_message, get_data, TX_ID
 from sdx_gcp.app import get_logger
 
 from app import CONFIG, sdx_app
@@ -9,7 +9,7 @@ from app.comments import delete_stale_comments
 logger = get_logger()
 
 
-def process(message: Message):
+def process(message: Message, tx_id: TX_ID):
     """Perform the required cleanup based on the information within the receipt
 
     For all submission types this involves removal from the output bucket.

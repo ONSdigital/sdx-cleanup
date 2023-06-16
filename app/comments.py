@@ -29,7 +29,7 @@ def delete_stale_comments():
             query.keys_only()
             keys = [entity.key for entity in query.fetch(limit=MAX_ENTITIES)]
             client.delete_multi(keys)
-            logger.info(f'successfully removed from Datastore', keys=keys)
+            logger.info('successfully removed from Datastore', keys=keys)
 
         except Exception as e:
             logger.error(f"failed to delete for kind {kind}")
