@@ -35,6 +35,12 @@ def process(message: Message, tx_id: TX_ID):
 
     elif file_type == "feedback":
         feedback_filename = file_name.split('-fb-')[0]
+
+        # The original filename doesn't have this prefix, so remove it in order to delete it
+        if feedback_filename.startswith('739-') or feedback_filename.startswith('738-'):
+            feedback_filename = feedback_filename[4:]
+            logger.info(f"Renamed feedback filename to delete from input bucket: {feedback_filename}")
+
         sdx_app.gcs_delete(feedback_filename, CONFIG.SURVEY_INPUT_BUCKET_NAME)
 
     else:
