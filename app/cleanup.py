@@ -26,6 +26,11 @@ def process(message: Message, tx_id: TX_ID):
     # all artifacts require removing from outputs bucket
     sdx_app.gcs_delete(file, CONFIG.OUTPUT_BUCKET_NAME)
 
+    # The original filename doesn't have this prefix, so remove it in order to delete it
+    if file_name.startswith('739-') or file_name.startswith('738-'):
+        file_name = file_name[4:]
+        logger.info(f"Using different filename to delete from bucket: {file_name}")
+
     # special actions depending on type
     if file_type == "comments":
         delete_stale_comments()
