@@ -148,6 +148,25 @@ class TestCleanup(unittest.TestCase):
 
     @patch('app.cleanup.sdx_app')
     @patch('app.cleanup.CONFIG')
+    def test_740_feedback_receipt(self, mock_config, mock_app):
+        receipt_dict = json.loads(self.receipt)
+        receipt_dict['dataset'] = "740|feedback/740-d41a586c-bea2-47c8-b782-f9bdb322b089-fb-1645465208"
+        receipt = json.dumps(receipt_dict)
+        m = self.message
+        m["data"] = convert_data(receipt)
+        cleanup.process(m, FAKE_TX_ID)
+        calls = [
+            call(
+                "feedback/740-d41a586c-bea2-47c8-b782-f9bdb322b089-fb-1645465208",
+                mock_config.OUTPUT_BUCKET_NAME),
+            call(
+                "d41a586c-bea2-47c8-b782-f9bdb322b089",
+                mock_config.SURVEY_INPUT_BUCKET_NAME)
+        ]
+        mock_app.gcs_delete.assert_has_calls(calls, any_order=True)
+
+    @patch('app.cleanup.sdx_app')
+    @patch('app.cleanup.CONFIG')
     @patch('app.cleanup.delete_stale_comments')
     def test_comments_receipt(self, mock_delete_comments, mock_config, mock_app):
         receipt_dict = json.loads(self.receipt)
