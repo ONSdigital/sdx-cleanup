@@ -26,10 +26,15 @@ def process(message: Message, tx_id: TX_ID):
     # all artifacts require removing from outputs bucket
     sdx_app.gcs_delete(file, CONFIG.OUTPUT_BUCKET_NAME)
 
-    # The original filename doesn't have this prefix, so remove it in order to delete it
-    if file_name.startswith('739-') or file_name.startswith('738-'):
-        file_name = file_name[4:]
-        logger.info(f"Using different filename to delete from bucket: {file_name}")
+    # Some surveys have their survey id prepended to the filename, so we need to remove it in order to delete it
+    naughty_survey_ids = ["739", "738", "740"]
+
+    for survey_id in naughty_survey_ids:
+        if file_name.startswith(f"{survey_id}-"):
+            # Remove the survey id
+            file_name = file_name[4:]
+            logger.info(f"Using different filename to delete from bucket for survey id: {survey_id}, new filename: {file_name}")
+            break
 
     # special actions depending on type
     if file_type == "comments":
