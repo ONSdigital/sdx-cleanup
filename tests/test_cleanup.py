@@ -82,7 +82,6 @@ class TestCleanup(unittest.TestCase):
         app.dependency_overrides[get_storage_service] = lambda: self.file_deleter
         app.dependency_overrides[get_comments_deleter] = lambda: self.comments_deleter
 
-
     def create_envelope(self, dataset: str) -> Envelope:
         self.receipt['dataset'] = dataset
         message: Message = {
@@ -97,7 +96,7 @@ class TestCleanup(unittest.TestCase):
 
     def test_cleanup_survey(self):
         envelope = self.create_envelope("139|survey/a148ac43-a937-401f-1234-b9bc5c123b5a")
-        self.client.post("/", json=envelope)
+        resp = self.client.post("/", json=envelope)
         calls = [
             call(
                 "survey/a148ac43-a937-401f-1234-b9bc5c123b5a",
@@ -107,10 +106,11 @@ class TestCleanup(unittest.TestCase):
                 "ons-sdx-sandbox-survey-responses")
         ]
         self.file_deleter.delete.assert_has_calls(calls, any_order=True)
+        self.assertTrue(resp.is_success)
 
     def test_cleanup_feedback(self):
         envelope = self.create_envelope("740|feedback/b0227f64-c6c9-4b50-9b9e-c3e42c384419")
-        self.client.post("/", json=envelope)
+        resp = self.client.post("/", json=envelope)
         calls = [
             call(
                 "feedback/b0227f64-c6c9-4b50-9b9e-c3e42c384419",
@@ -120,10 +120,11 @@ class TestCleanup(unittest.TestCase):
                 "ons-sdx-sandbox-survey-responses")
         ]
         self.file_deleter.delete.assert_has_calls(calls, any_order=True)
+        self.assertTrue(resp.is_success)
 
     def test_cleanup_seft(self):
         envelope = self.create_envelope("221|seft/49902989748D_202512_221_20251222131411.xlsx.gpg")
-        self.client.post("/", json=envelope)
+        resp = self.client.post("/", json=envelope)
         calls = [
             call(
                 "seft/49902989748D_202512_221_20251222131411.xlsx.gpg",
@@ -133,13 +134,23 @@ class TestCleanup(unittest.TestCase):
                 "ons-sdx-sandbox-seft-responses")
         ]
         self.file_deleter.delete.assert_has_calls(calls, any_order=True)
+        self.assertTrue(resp.is_success)
 
     def test_cleanup_comments(self):
         envelope = self.create_envelope("Comments|comments/2025-12-22_06-00-21.zip")
-        self.client.post("/", json=envelope)
+        resp = self.client.post("/", json=envelope)
         calls = [
             call(
                 "comments/2025-12-22_06-00-21.zip",
                 "ons-sdx-sandbox-outputs"),
         ]
         self.file_deleter.delete.assert_has_calls(calls, any_order=True)
+        self.comments_deleter.delete_stale_comments.assert_called()
+        self.assertTrue(resp.is_success)
+
+    def test_invalid_receipt(self):
+        envelope = self.create_envelope("139|survey-a148ac43-a937-401f-1234-b9bc5c123b5a")
+        resp = self.client.post("/", json=envelope)
+        self.file_deleter.delete.assert_not_called()
+        # should return a success to avoid being retried
+        self.assertTrue(resp.is_success)
