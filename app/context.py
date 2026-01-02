@@ -21,19 +21,6 @@ class MalformedReceipt(DataError):
 
 
 def extract_context(message: Message) -> FileContext:
-    # "name": "a148ac43-a937-401f-1234-b9bc5c123b5a.zip"
-    # "dataset": "139|survey/a148ac43-a937-401f-1234-b9bc5c123b5a"
-    #
-    # "name": "b0227f64-c6c9-4b50-9b9e-c3e42c384419.zip"
-    # "dataset": "740|feedback/b0227f64-c6c9-4b50-9b9e-c3e42c384419"
-    #
-    # "name": "49902989748D_202512_221_20251222131411.xlsx.gpg.zip"
-    # "dataset": "221|seft/49902989748D_202512_221_20251222131411.xlsx.gpg"
-    #
-    # "name": "2025-12-22_06-00-21.zip.zip"
-    # "dataset": "Comments|comments/2025-12-22_06-00-21.zip"
-    #
-
     data: str = get_data(message)
     receipt: Receipt = json.loads(data)
     if 'dataset' not in receipt:
