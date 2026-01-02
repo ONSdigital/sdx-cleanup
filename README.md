@@ -1,5 +1,7 @@
 # sdx-cleanup
 
+![Version](https://ons-badges-752336435892.europe-west2.run.app/api/badge/custom?left=Python&right=3.13)
+
 The SDX-Cleanup service is used within the Office National of Statistics (ONS) for removing 
 any artefacts that remain after successful ingestion by NIFI - indicated by the posting 
 of a receipt on the dap-receipt-topic.
